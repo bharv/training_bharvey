@@ -1,0 +1,57 @@
+---
+title: "Brett_Rmarkdown_playground"
+author: "Brett"
+date: "2/25/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readr)
+```
+
+
+## Introduction
+
+* read in and reference dta source
+
+
+```{r}
+bg_chem <- read_csv("BGchem2008data.csv")
+head(bg_chem)
+```
+
+
+## Analysis
+
+* calculate basics summary stats
+ - mean NO3
+ - mean NO2
+ - mean NH4
+ - mean P
+
+```{r}
+NO3_mean <- mean(bg_chem$NO3)
+NO2_mean <- mean(bg_chem$NO2)
+NH4_mean <- mean(bg_chem$NH4)
+P_mean   <- mean(bg_chem$P)
+
+```
+
+* calculate mean refield ratio
+```{r}
+red <- (NO3_mean + NO2_mean + NH4_mean)/P_mean
+```
+
+We calculated the Redfield ration to be `r round(red, 2)`.
+
+* plot redfield ratio
+
+```{r, echo=FALSE}
+plot(bg_chem$P, bg_chem$NO2 + bg_chem$NO3 + bg_chem$NH4)
+```
+
+
