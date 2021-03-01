@@ -6,3 +6,6 @@ output: html_document
 ---
 
 Hello
+
+The modules I've completed:
+- [Brett Rmarkdown Playground](Brett_Rmarkdown_playground.html)
