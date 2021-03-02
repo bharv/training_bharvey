@@ -95,7 +95,7 @@ leaflet(locations) %>%
 ```
 
 ```{r}
-leaflet(locations) %>% 
+coolmap <- leaflet(locations) %>% 
   addWMSTiles("https://www.gebco.net/data_and_products/gebco_web_services/web_map_service/mapserv?",
               layers = 'GEBCO_LATEST',
               attribution = "Imagery reproduced from the GEBCO_2014 Grid, version 20150318, www.gebco.net") %>%
@@ -111,5 +111,7 @@ leaflet(locations) %>%
                    weight = 0.5,
                    color = "white",
                    opacity = 1)
+ggsave(chart.png, coolmap)  # save chart, etc. to file, then add call to chart into index.html 
+
 ```
 

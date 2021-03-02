@@ -9,3 +9,6 @@ Hello
 
 The modules I've completed:
 - [Brett Rmarkdown Playground](Brett_Rmarkdown_playground.html)
+
+A cool interactive webby maps thing can be found at:
+- [Cool Data Viz Stuff](data-viz.html)
