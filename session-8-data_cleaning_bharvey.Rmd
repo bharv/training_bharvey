@@ -1,0 +1,119 @@
+---
+title: "Data_cleaning_bharvey"
+author: "Brett"
+date: "3/1/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+LOAD PACKAGES
+```{r, message=FALSE}
+library(dplyr)
+library(tidyr)
+library(readr)
+```
+
+LOAD DATA
+```{r}
+catch_original <- read_csv("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/df35b.302.1")
+```
+
+MANIPULATE DATA
+```{r}
+catch_data <- catch_original %>% 
+  select(Region, Year, Chinook, Sockeye, Coho, Pink, Chum)
+
+
+```
+
+DATA DIAGNOSTICS AND CLEANING
+```{r}
+catch_clean <- catch_data %>% 
+  mutate(Chinook = as.numeric(Chinook))
+i <- which(is.na(catch_clean$Chinook))
+catch_clean[i,]
+catch_data[i,]
+# shows data was entered as "I" instead of "1"
+# now to fix
+catch_clean <- catch_data %>%
+  mutate(Chinook = ifelse(Chinook == "I", 1, Chinook)) %>% 
+  mutate(Chinook = as.numeric(Chinook))
+
+# now take a look at dataframe
+summary(catch_clean)
+# looks good now, but need to change from wide to tall format
+```
+
+CREATE LONG "TIDY" FORMAT DATAFRAME
+```{r}
+catch_long <- catch_clean %>% 
+  pivot_longer(cols = -c(Region, Year), names_to = species, values_to = catch)
+
+catch_wide <- catch_long %>% 
+  pivot_wider(names_from = species, values_from = catch)
+```
+
+RENAME COLUMNS
+```{r}
+catch_long <- catch_long %>% 
+  rename(catch_thousands = catch) 
+
+catch_long <- catch_long %>% 
+  mutate(catch = catch_thousands * 1000) %>% 
+  select(-catch_thousands)
+```
+
+
+DATA SUMMARIES
+```{r}
+mean_region <- catch_long %>% 
+  group_by(Region) %>% 
+  summarise(catch_mean = mean(catch)) %>% 
+  arrange(desc(catch_mean))
+
+n_region <- catch_long %>% 
+  group_by(Region) %>% 
+  summarise(n = n())
+
+n_abund_x_region <- catch_long %>% 
+  group_by(Region, Year) %>% 
+  summarise(sum(catch))
+```
+
+
+```{r}
+SSE_catch <- catch_long %>% 
+  filter(Region == "SSE")
+```
+
+```{r}
+region_defs <- read_csv("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/df35b.303.1") %>% 
+    select(code, mgmtArea)
+
+catch_joined <- left_join(catch_long, region_defs, by = c("Region" = "code"))
+
+
+```
+
+
+```{r}
+sites_df <- data.frame(site = c("HAW-101",
+                                "HAW-103",
+                                "OAH-320",
+                                "OAH-219",
+                                "MAI-039"),
+                       stringsAsFactors = FALSE)
+
+sites_df %>% 
+  separate(site, c("island", "site_number"), "-")
+```
+
+
+
+```{r}
+region_info <- read.csv("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/df35b.303.1")
+```
+
