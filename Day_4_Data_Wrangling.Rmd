@@ -1,0 +1,100 @@
+---
+title: "Day 4 Challenge"
+author: "Brett"
+date: "3/2/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(rvest)
+library(readr)
+library(dplyr)
+library(janitor)
+library(ggplot2)
+```
+
+
+```{r}
+webpage <- read_html("https://www.pwrc.usgs.gov/bbl/manual/speclist.cfm")
+
+tbls <- html_nodes(webpage, "table") %>% 
+    html_table(fill = TRUE)
+
+species <- tbls[[1]] %>% 
+    clean_names() %>% 
+    select(alpha_code, common_name) %>% 
+    mutate(alpha_code = tolower(alpha_code))
+View(species)
+```
+
+Read in data
+```{r, warning=FALSE}
+U_pred_survey <- read_csv("https://cn.dataone.org/cn/v2/resolve/urn:uuid:9ffec04c-7e2d-41dd-9e88-b6c2e8c4375e")
+U_nest_data <- read_csv("https://cn.dataone.org/cn/v2/resolve/urn:uuid:982bd2fc-4edf-4da7-96ef-0d11b853102d")
+
+
+```
+
+Create function to translate species codes to common names
+```{r}
+
+add_common_names_col <- function(df, code_col_name) {
+  return_df <- left_join(df, species, by = "alpha_code")
+  return(return_df)
+}
+
+add_common_names_col(U_nest_data, U_nest_common, species)
+add_common_names_col(U_pred_survey, species)
+
+# give up version
+new_pred_survey <- left_join(U_pred_survey, species, by = c("species" = "alpha_code"))
+new_nest_data <- left_join(U_nest_data, species, by = c("species" = "alpha_code"))
+
+
+```
+
+Calculate number of predators by year and species 
+```{r}
+pred_num <- new_pred_survey %>% 
+#  drop_na(species) %>% 
+  select(count, year, species, common_name) %>% 
+  group_by(year, species, common_name) %>% 
+  summarise(count = sum(count, na.rm = TRUE))
+```
+Plot result
+```{r}
+ggplot(pred_num, aes(x = year, y = count, fill = common_name)) +
+  geom_col()
+```
+Calculate total number of eggs predated by year and species.
+```{r}
+eggs_predated <- new_nest_data %>% 
+#  drop_na(species) %>% 
+  select(number_eggs_predated, year, species, common_name) %>% 
+  group_by(year, species, common_name) %>% 
+  summarise(eggs_eaten = sum(number_eggs_predated, na.rm = T))
+
+```
+
+Calculate total number of predators by year, join to summarized egg predation table, and plot the result.
+```{r}
+pred_num_annual <- new_pred_survey %>% 
+  drop_na(species) %>% 
+  select(count, year) %>% 
+  group_by(year) %>% 
+  summarise(pred_count_annual = sum(count))
+
+egg_predated <- eggs_predated %>% 
+  left_join(pred_num_annual, by = c("year" = "year"))
+
+ggplot(egg_predated, aes(x = pred_count_annual, y = eggs_eaten, color = common_name)) +
+  geom_point() 
+
+
+
+```
+
