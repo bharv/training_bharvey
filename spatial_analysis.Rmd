@@ -9,12 +9,98 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r, message=FALSE}
 library(sf)
 library(dplyr)
 library(ggplot2)
 library(leaflet)
 library(scales)
 library(ggmap)
+```
+
+
+```{r}
+## Read in shapefile using sf
+ak_regions <- read_sf("shapefiles/ak_regions_simp.shp")
+
+head(ak_regions)
+plot(ak_regions)  
+```
+
+```{r}
+st_crs(ak_regions)
+
+```
+
+```{r}
+ak_regions_3338 <- ak_regions %>%
+  st_transform(crs = 3338)
+
+st_crs(ak_regions_3338)
+
+plot(ak_regions_3338)
+head(ak_regions_3338)
+```
+
+Read in population data
+```{r}
+pop <- read.csv("shapefiles/alaska_population.csv")
+```
+
+Turn into sf object
+```{r}
+pop_4326 <- st_as_sf(pop, 
+                     coords = c('lng', 'lat'),
+                     crs = 4326,
+                     remove = F)    # keeps lat and long columns around
+
+# head(pop_4326)
+# class(pop_4326)
+```
+
+Join pop data to ak_regions, but datasets in incompatible systems, so need to transform pop_4326 to 3338. 
+```{r}
+pop_3338 <- st_transform(pop_4326, crs = 3338)
+
+pop_joined <- st_join(pop_3338, ak_regions_3338, join = st_within)
+
+# head(pop_joined)
+# plot(pop_joined)
+```
+
+Plot total population by region
+```{r}
+pop_region <- pop_joined %>% 
+  st_drop_geometry() %>%              #need to get rid of geometry column, or plots as points (not polygons), and simply deselecting the geometry colomn does not work (i.e. -geometry). Alt is st_drop_geometry
+  group_by(region)  %>%
+  summarise(total_pop = sum(population))
+
+head(pop_region)
+plot(pop_region)
+class(pop_region)
+```
+
+```{r}
+pop_region_3338 <- left_join(ak_regions_3338, pop_region)
+
+plot(pop_region_3338)
+```
+
+```{r}
+pop_mgmt_338 <- pop_region_3338 %>% 
+  group_by(mgmt_area) %>% 
+  summarize(total_pop = sum(total_pop))
+
+plot(pop_mgmt_338["total_pop"])  # note this unions areas together into region blocks
+
+```
+
+
+```{r}
+pop_mgmt_3338 <- pop_region_3338 %>% 
+  group_by(mgmt_area) %>% 
+  summarize(total_pop = sum(total_pop), do_union = F)
+
+plot(pop_mgmt_3338["total_pop"])
 ```
 
